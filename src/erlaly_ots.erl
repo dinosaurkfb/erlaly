@@ -846,7 +846,7 @@ get_row_record_list(XmlDoc) ->
     case TNames of
 	[] ->
 	    [];
-	[#xmlAttribute{value=TableName}] ->
+	[#xmlAttribute{value=_TableName}] ->
 %%	    io:format("TableName: ~p~n", [TableName]),
 	    Rows = xmerl_xpath:string("//Table/Row", XmlDoc),
 	    [get_row_record(Row) || Row <- Rows]
@@ -1264,12 +1264,13 @@ genericRequest(Verb, Params) ->
     end.
 
 get_access_conf(Key) ->
-    case ets:lookup(?MODULE, Key) of
-	[] ->
-	    ErrorMsg = io_lib:format("Can't get the ~p configuration.", [Key]),
-	    throw({error, ErrorMsg});
+    try ets:lookup(?MODULE, Key) of
 	[{Key, Value}] ->
 	    Value
+    catch
+	error:badarg ->
+	    throw({exit, {"OTSAccessConfigNotExist", 
+			  "Can't get the OTS access configuration from ets table. Probably because erlaly:init has not been called."}})
     end.
 
 getProtocol() ->

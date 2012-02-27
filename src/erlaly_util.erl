@@ -25,7 +25,6 @@ date_to_dw_str(Date) ->
     element(DW, {"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"}).
 
 aly_fmt(DateTime) ->
-    io:format("DateTime:~p~n", [DateTime]),
     {Date,{Hour,Min,Sec}} = DateTime,
     {Year,Month,Day} = Date,
     MonStr = month_to_str(Month),

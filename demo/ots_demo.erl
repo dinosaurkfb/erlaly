@@ -10,13 +10,19 @@
 
 -include("erlaly_ots.hrl").
 
--export([demo_table_ops/0, demo_table_group_ops/0, demo_bad_ops/0, demo_data_ops/0, 
-	 demo_batch_data_ops/0, tmp/0]).
+-export([init/2,
+	 demo_table_ops/0, demo_table_group_ops/0,
+	 demo_bad_ops/0, demo_data_ops/0, 
+	 demo_batch_data_ops/0, demo_transaction/0]).
 -import(erlaly_util, [guess_type/1]).
 -import(demo_util, [generate_col_rcds/2, generate_data_op/2]).
 
--define(TestTableName, "TestCreateTable").
--define(TestTableGroupName, "TestCreateTableGroup").
+-define(TEST_TABLE_NAME, "TestCreateTable").
+-define(TEST_TABLE_GROUP_NAME, "TestCreateTableGroup").
+
+init(AccessId, AccessKey) ->
+    erlaly:start(),
+    ok = erlaly_ots:init(AccessId, AccessKey).
 
 create_test_table() ->
     %% Table Primary Keys
@@ -57,7 +63,7 @@ create_test_table() ->
 		   paging_key_len = 2,
 		   columns = Columns}],
     
-    Table1 = #table{name = ?TestTableName,
+    Table1 = #table{name = ?TEST_TABLE_NAME,
 		   primary_keys = TablePKs,
 		   %% 原表将前两列 UserID 和 ReceiveTime 作为分页键
 		   paging_key_len = 2,
@@ -67,13 +73,11 @@ create_test_table() ->
     erlaly_ots:create_table(Table1).
 
 demo_table_ops() ->
-    erlaly:start(),
-    ok = erlaly_ots:init("wnh91cxrd3xw7hgxnrlsu131", "d21NPKrin2QXLGowsuFcPtlmumI=", false),
     {ok, Tables, _, _} = erlaly_ots:list_table(),
     io:format("~n-------- list_table --------~n~p~n", [Tables]),
-    case lists:member(?TestTableName, Tables) of
+    case lists:member(?TEST_TABLE_NAME, Tables) of
 	true ->
-	    {Result, Code, _, _} = erlaly_ots:delete_table(?TestTableName);
+	    {Result, Code, _, _} = erlaly_ots:delete_table(?TEST_TABLE_NAME);
 	false ->
 	    PrimaryKeys = [#primary_key{name = "pkey_str",
 					type = string},
@@ -82,47 +86,43 @@ demo_table_ops() ->
 			   #primary_key{name = "pkey_int",
 					type = integer}],
 	    
-	    Table = #table{name = ?TestTableName,
+	    Table = #table{name = ?TEST_TABLE_NAME,
 			   primary_keys = PrimaryKeys},
 
 	    {ok, _, _, _} = erlaly_ots:create_table(Table),
 	    io:format("~n-------- create_table ok --------~n", []),
-	    {Result, Code, _, _} = erlaly_ots:delete_table(?TestTableName)
+	    {Result, Code, _, _} = erlaly_ots:delete_table(?TEST_TABLE_NAME)
     end,
     io:format("~n-------- delete_table return ~p --------~nCode:~p~n", [Result, Code]),
-    Result = create_test_table(),
-    case Result of
+    Result1 = create_test_table(),
+    case Result1 of
 	{ok, _, _, _} ->
 	    io:format("~n-------- create_table return ok --------~n", []),
-	    {ok, TableR, {requestId, _}, {hostId, _}} = erlaly_ots:get_table_meta(?TestTableName),
+	    {ok, TableR, {requestId, _}, {hostId, _}} = erlaly_ots:get_table_meta(?TEST_TABLE_NAME),
 	    io:format("~n-------- table read --------------------~n~p~n", [TableR]);
 	_ ->
 	    io:format("~n-------- create_table return error --------~n", [])
     end.
 
 demo_table_group_ops() ->
-    erlaly:start(),
-    ok = erlaly_ots:init("wnh91cxrd3xw7hgxnrlsu131", "d21NPKrin2QXLGowsuFcPtlmumI=", false),
     {ok, TableGroups, {requestId, _RequestId}, {hostId, _HostId}} = erlaly_ots:list_table_group(),
     io:format("~n-------- list_table_group --------~n~p~n", [TableGroups]),
 
-    {ok, Code, _, _} = erlaly_ots:create_table_group(?TestTableGroupName, string),
+    {ok, Code, _, _} = erlaly_ots:create_table_group(?TEST_TABLE_GROUP_NAME, string),
     io:format("~n-------- create_table_group --------~n~p~n", [Code]),
 
     {ok, TableGroups1, _, _} = erlaly_ots:list_table_group(),
     io:format("~n-------- list_table_group --------~n~p~n", [TableGroups1]),
 
-    {ok, Code, _, _} = erlaly_ots:delete_table_group(?TestTableGroupName),
+    {ok, Code, _, _} = erlaly_ots:delete_table_group(?TEST_TABLE_GROUP_NAME),
     io:format("~n-------- create_table_group --------~n~p~n", [Code]),
 
     {ok, TableGroups2, _, _} = erlaly_ots:list_table_group(),
     io:format("~n-------- list_table_group --------~n~p~n", [TableGroups2]).
-    %% {ok, Table, {requestId, _}, {hostId, _}} = erlaly_ots:get_table_meta(?TestTableName),
+    %% {ok, Table, {requestId, _}, {hostId, _}} = erlaly_ots:get_table_meta(?TEST_TABLE_NAME),
     %% io:format("~n-------- table meta --------~n~p~n", [Table]).
     
 demo_bad_ops() ->
-    erlaly:start(),
-    ok = erlaly_ots:init("wnh91cxrd3xw7hgxnrlsu131", "d21NPKrin2QXLGowsuFcPtlmumI=", false),
     %% Table Primary Keys
     %% 表的主键列，其中第一列：UserID为数据分片键
     TablePKs = [#primary_key{name = "UserID",
@@ -161,7 +161,7 @@ demo_bad_ops() ->
 		   paging_key_len = 2,
 		   columns = Columns}],
     
-    Table1 = #table{name = ?TestTableName,
+    Table1 = #table{name = ?TEST_TABLE_NAME,
 		   primary_keys = "Bad Primary Keys",
 		   %% 原表将前两列 UserID 和 ReceiveTime 作为分页键
 		   paging_key_len = 2,
@@ -174,7 +174,7 @@ demo_bad_ops() ->
 		      paging_key_len = bad_pkl,
 		      columns = Columns}],
     
-    Table2 = #table{name = ?TestTableName,
+    Table2 = #table{name = ?TEST_TABLE_NAME,
 		   primary_keys = TablePKs,
 		   %% 原表将前两列 UserID 和 ReceiveTime 作为分页键
 		   paging_key_len = 2,
@@ -184,8 +184,6 @@ demo_bad_ops() ->
     spawn(fun() -> erlaly_ots:create_table(Table2) end).
     
 demo_data_ops() ->
-    erlaly:start(),
-    ok = erlaly_ots:init("wnh91cxrd3xw7hgxnrlsu131", "d21NPKrin2QXLGowsuFcPtlmumI=", false),
     Result = create_test_table(),
     case Result of
 	{ok, _, _, _} ->
@@ -197,28 +195,27 @@ demo_data_ops() ->
 	    io:format("~n-------- create_table return error --------~n~p~n", [Desc])
     end.
     
-tmp() ->
-    erlaly:start(),
-    ok = erlaly_ots:init("wnh91cxrd3xw7hgxnrlsu131", "d21NPKrin2QXLGowsuFcPtlmumI="),
+demo_transaction() ->
     Result = create_test_table(),
     case Result of
 	{ok, _, _, _} ->
 	    io:format("~n-------- create_table return ok --------~n", []),
-	    tmp_transaction();
+	    transaction_ops();
 	{error, {"OTSStorageObjectAlreadyExist", _, _, _}} ->
-	    tmp_transaction();
+	    transaction_ops();
 	{error, Desc} ->
 	    io:format("~n-------- create_table return error --------~n~p~n", [Desc])
     end.
 
-tmp_transaction() ->
-    {ok, TransactionID, _, _} = erlaly_ots:start_transaction(?TestTableName, "U00001"),
-    io:format("TransactionID=~p~n", [TransactionID]),
-    {ok, _, _, _} = erlaly_ots:commit_transaction(TransactionID).
+transaction_ops() ->
+    {ok, TransactionID, _, _} = erlaly_ots:start_transaction(?TEST_TABLE_NAME, "U00001"),
+    CommitResult = erlaly_ots:commit_transaction(TransactionID),
+    io:format("CommitResult:~p~n", [CommitResult]),
+    {ok, TransactionID1, _, _} = erlaly_ots:start_transaction(?TEST_TABLE_NAME, "U00001"),
+    AbortResult = erlaly_ots:abort_transaction(TransactionID1),
+    io:format("AbortResult:~p~n", [AbortResult]).
 
 demo_batch_data_ops() ->
-    erlaly:start(),
-    ok = erlaly_ots:init("wnh91cxrd3xw7hgxnrlsu131", "d21NPKrin2QXLGowsuFcPtlmumI=", false),
     Result = create_test_table(),
     case Result of
 	{ok, _, _, _} ->
@@ -325,7 +322,7 @@ get_rows_by_range_ops(#data_op{primary_keys = PrimaryKeys} = DataOp) ->
 					    rbegin = inf_min,
 					    rend = inf_max}},
     NewDataOp = DataOp#data_op{primary_keys = lists:reverse([RangingPK | OtherPKs])},
-    erlaly_ots:get_rows_by_range(?TestTableName, NewDataOp).
+    erlaly_ots:get_rows_by_range(?TEST_TABLE_NAME, NewDataOp).
 
 batch_modify_data_ops(TestRowDataOps) ->
     %% 按数据分片键的值将列表拆分
@@ -347,22 +344,22 @@ batch_modify_data_ops(TestRowDataOps) ->
 
     lists:map(
       fun({PartitionKeyValue, DataOps}) ->
-	      {ok, TransactionID, _, _} = erlaly_ots:start_transaction(?TestTableName, PartitionKeyValue),
+	      {ok, TransactionID, _, _} = erlaly_ots:start_transaction(?TEST_TABLE_NAME, PartitionKeyValue),
 	      io:format("TransactionID=~p~n", [TransactionID]),
 	      %% 保证同一数据分片键内的 data_op 记录的顺序与原来一致
 	      %% 如果要求不同数据分片键的 data_op 记录顺序与原来一致，那么此函数不适用
-	      {ok, _, _, _} = erlaly_ots:batch_modify_data(?TestTableName, lists:reverse(DataOps), TransactionID),
+	      {ok, _, _, _} = erlaly_ots:batch_modify_data(?TEST_TABLE_NAME, lists:reverse(DataOps), TransactionID),
 	      erlaly_ots:commit_transaction(TransactionID)
       end, BatchDataOps).
 
 get_row_ops(TestDataOps) ->
     lists:map(fun(X) ->
-		      erlaly_ots:get_row(?TestTableName, X)
+		      erlaly_ots:get_row(?TEST_TABLE_NAME, X)
 	      end, TestDataOps).
 
 put_data_ops(TestDataOps) ->
     lists:map(fun(X) ->
-		      erlaly_ots:put_data(?TestTableName, X)
+		      erlaly_ots:put_data(?TEST_TABLE_NAME, X)
 	      end, TestDataOps).
 
 %% 这是一种偷懒的做法，PutDataOps必须是之前用于put_data的data_op记录列表
@@ -382,6 +379,6 @@ generate_get_row_data_ops_all(PutDataOps) ->
 
 delete_data_ops(TestDataOps) ->
     lists:map(fun(X) ->
-		      erlaly_ots:delete_data(?TestTableName, X)
+		      erlaly_ots:delete_data(?TEST_TABLE_NAME, X)
 	      end, TestDataOps).
 
