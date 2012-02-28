@@ -14,7 +14,7 @@
 	 start_transaction/2, commit_transaction/1,
 	 abort_transaction/1, batch_modify_data/3,
 	 put_data/3, delete_data/3, 
-	 put_data/2, delete_data/2, modify_data/2,
+	 put_data/2, delete_data/2,
 	 get_row/3, get_rows_by_range/3, get_rows_by_offset/3,
 	 get_row/2, get_rows_by_range/2, get_rows_by_offset/2,
 	 init/2
