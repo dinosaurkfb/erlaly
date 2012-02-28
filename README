@@ -1,10 +1,15 @@
+Erlaly 是为“阿里云”服务提供的一套Erlang接口.
 Erlaly provides Erlang interfaces to various Aliyun cloud service offerings.
 
--- original documentation from Google Code wiki --
-
 = Description = 
+Erlaly 是为“阿里云”服务提供的一套Erlang接口，目前仅支持 OTS 服务。
+代码仍处于非常初级的阶段，需要更多的测试和使用来稳定代码。
+
 Erlaly is a collection of client implementations of Aliyun's cloud services offerings. Currently there is only client for ots.
 Erlaly borrows some snippets from Erlaws which is a collection of client implementations of Amazon's WebServices offerings.
+
+Erlaly is at it's very early stage, more tests are needed to make it usable.
+
 = Build =
 
 Issue `erl -make` to build the sources.
